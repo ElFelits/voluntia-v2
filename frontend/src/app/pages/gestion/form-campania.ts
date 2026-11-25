@@ -1,0 +1,91 @@
+import { HttpErrorResponse } from '@angular/common/http';
+import { Component, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { map } from 'rxjs';
+import { Estado } from '../../components/estado/estado';
+import { Solicitud } from '../../components/estado/solicitud';
+import { Categoria, categorias } from '../../models/voluntia';
+import { SesionService, VoluntiaService } from '../../services/voluntia.service';
+
+const requerido = [Validators.required, Validators.pattern(/\S/)];
+const fechaValida = (campo: AbstractControl) => campo.value && !Number.isFinite(new Date(campo.value).getTime()) ? { fechaInvalida: true } : null;
+
+@Component({
+  imports: [Estado, RouterLink, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule],
+  templateUrl: './form-campania.html',
+})
+export class FormCampania {
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private api = inject(VoluntiaService);
+  private sesion = inject(SesionService);
+  private snack = inject(MatSnackBar);
+  readonly categorias = categorias;
+  readonly consulta = new Solicitud();
+  readonly operacion = new Solicitud();
+  readonly id = signal<number | null>(null);
+  readonly listo = signal(false);
+  readonly form = inject(FormBuilder).nonNullable.group({
+    titulo: ['', [...requerido, Validators.maxLength(150)]],
+    categoria: ['Ambiental' as Categoria, Validators.required],
+    descripcion: ['', [...requerido, Validators.maxLength(255)]],
+    ubicacion: ['', [...requerido, Validators.maxLength(255)]],
+    fecha: ['', [Validators.required, fechaValida]],
+    cupos: [1, [Validators.required, Validators.min(1), Validators.max(100000), Validators.pattern(/^\d+$/)]],
+    requisitos: ['', Validators.maxLength(255)],
+  });
+
+  constructor() {
+    this.route.paramMap.pipe(takeUntilDestroyed()).subscribe(params => {
+      const campo = params.get('id');
+      this.id.set(campo === null ? null : Number(campo));
+      this.cargar();
+    });
+  }
+
+  cargar(): void {
+    const id = this.id();
+    this.listo.set(id === null);
+    if (id === null) return;
+    this.consulta.ejecutar(this.api.campania(id).pipe(map(item => {
+      const cuenta = this.sesion.cuenta();
+      if (cuenta?.rol !== 'ADMIN' && cuenta?.id !== item.organizacionId) {
+        throw new HttpErrorResponse({ status: 403, error: { mensaje: 'Solo puedes gestionar tus campañas.' } });
+      }
+      if (item.estado === 'CANCELADA') {
+        throw new HttpErrorResponse({ status: 409, error: { mensaje: 'La campaña está cancelada.' } });
+      }
+      return item;
+    })), item => {
+      this.form.setValue({
+        titulo: item.titulo, categoria: item.categoria, descripcion: item.descripcion, ubicacion: item.ubicacion,
+        fecha: item.fecha.slice(0, 16), cupos: item.cupos, requisitos: item.requisitos,
+      });
+      this.listo.set(true);
+    });
+  }
+
+  guardar(): void {
+    this.form.markAllAsTouched();
+    if (this.form.invalid || this.operacion.cargando()) return;
+    const id = this.id();
+    const datos = this.form.getRawValue();
+    const cambios = { ...datos, titulo: datos.titulo.trim(), descripcion: datos.descripcion.trim(), ubicacion: datos.ubicacion.trim(), requisitos: datos.requisitos.trim() };
+    if (id === null && new Date(datos.fecha).getTime() <= Date.now()) {
+      this.form.controls.fecha.setErrors({ fechaPasada: true });
+      return;
+    }
+    const resultado = id === null ? this.api.publicar(cambios) : this.api.editarCampania(id, cambios);
+    this.operacion.ejecutar(resultado, () => {
+      this.snack.open(id === null ? 'Campaña publicada.' : 'Cambios guardados.', 'Cerrar', { duration: 4000 });
+      void this.router.navigate(['/gestion/campanias']);
+    });
+  }
+}

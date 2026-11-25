@@ -1,0 +1,47 @@
+<section class="contenedor pagina pagina-form">
+  <a class="volver" routerLink="/gestion/campanias"><span class="icon" aria-hidden="true">arrow_back</span> Gestión de campañas</a>
+  <div class="pagina-cabecera">
+    <h1>{{ id() === null ? 'Publicar campaña' : 'Editar campaña' }}</h1>
+    <p>Indica cómo, dónde y cuándo pueden participar los voluntarios.</p>
+  </div>
+  <app-estado [cargando]="consulta.cargando()" [error]="consulta.error()" (reintentar)="cargar()" />
+  @if (listo()) {
+    <div class="panel">
+      <form [formGroup]="form" (ngSubmit)="guardar()" class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Título</mat-label><input matInput formControlName="titulo" maxlength="150"><mat-error>Agrega un título.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Categoría</mat-label>
+          <mat-select formControlName="categoria">
+            @for (categoria of categorias; track categoria) { <mat-option [value]="categoria">{{ categoria }}</mat-option> }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="ancho">
+          <mat-label>Descripción</mat-label><textarea matInput formControlName="descripcion" maxlength="255" rows="3"></textarea><mat-error>Agrega una descripción.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="ancho">
+          <mat-label>Ubicación</mat-label><input matInput formControlName="ubicacion" maxlength="255"><mat-error>Indica dónde se realizará.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline" floatLabel="always">
+          <mat-label>Fecha y hora</mat-label><input matInput type="datetime-local" formControlName="fecha">
+          <mat-error>{{ form.controls.fecha.hasError('fechaPasada') ? 'Selecciona una fecha futura.' : 'Indica una fecha y hora válidas.' }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Cupos</mat-label><input matInput type="number" min="1" max="100000" step="1" formControlName="cupos">
+          <mat-error>Indica un número entero entre 1 y 100 000.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="ancho">
+          <mat-label>Requisitos</mat-label><textarea matInput formControlName="requisitos" maxlength="255" rows="2"></textarea>
+        </mat-form-field>
+        <div class="ancho">
+          <app-estado [error]="operacion.error()" [reintentable]="false" />
+          <div class="acciones-fila">
+            <button mat-flat-button type="submit" [disabled]="operacion.cargando()">{{ id() === null ? 'Publicar campaña' : 'Guardar cambios' }}</button>
+            <a mat-stroked-button routerLink="/gestion/campanias">Volver</a>
+          </div>
+        </div>
+      </form>
+    </div>
+  }
+</section>

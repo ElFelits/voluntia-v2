@@ -1,0 +1,55 @@
+<section class="contenedor pagina">
+  <div class="pagina-cabecera titulo-fila">
+    <div>
+      <h1>{{ rol === 'ADMIN' ? 'Gestionar campañas' : 'Mis campañas' }}</h1>
+      <p>Consulta el estado, los participantes y los resultados de cada campaña.</p>
+    </div>
+    @if (rol === 'ORGANIZACION') {
+      <a mat-flat-button routerLink="/gestion/campanias/nueva"><span class="icon" aria-hidden="true">add</span> Publicar campaña</a>
+    }
+  </div>
+  <app-estado [cargando]="consulta.cargando()" [error]="consulta.error()" (reintentar)="cargar()" />
+  <app-estado [error]="operacion.error()" [reintentable]="false" />
+  @if (!consulta.cargando() && !consulta.error()) {
+    @if (items().length) {
+      <div class="panel tabla-panel">
+        <table mat-table [dataSource]="items()" class="tabla" aria-label="Campañas de voluntariado">
+          <ng-container matColumnDef="campania">
+            <th mat-header-cell *matHeaderCellDef>Campaña</th>
+            <td mat-cell *matCellDef="let item">
+              <a class="texto-enlace" [routerLink]="['/campanias', item.id]">{{ item.titulo }}</a>
+              <small>{{ rol === 'ADMIN' ? item.organizacion + ' · ' : '' }}{{ item.ubicacion }}</small>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="fecha">
+            <th mat-header-cell *matHeaderCellDef>Fecha</th>
+            <td mat-cell *matCellDef="let item">{{ item.fecha | date:'dd/MM/y' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="cupos">
+            <th mat-header-cell *matHeaderCellDef>Cupos libres</th>
+            <td mat-cell *matCellDef="let item">{{ item.disponibles }} / {{ item.cupos }}</td>
+          </ng-container>
+          <ng-container matColumnDef="estado">
+            <th mat-header-cell *matHeaderCellDef>Estado</th>
+            <td mat-cell *matCellDef="let item"><span class="etiqueta" [class.neutra]="item.estado === 'CANCELADA'">{{ estado(item) }}</span></td>
+          </ng-container>
+          <ng-container matColumnDef="acciones">
+            <th mat-header-cell *matHeaderCellDef>Acciones</th>
+            <td mat-cell *matCellDef="let item">
+              <div class="acciones-fila">
+                <a mat-button [routerLink]="['/gestion/campanias', item.id, 'participantes']">Participantes</a>
+                @if (item.estado !== 'CANCELADA') {
+                  <a mat-button [routerLink]="['/gestion/campanias', item.id, 'impacto']">Impacto</a>
+                  <a mat-button [routerLink]="['/gestion/campanias', item.id, 'editar']">Editar</a>
+                  <button mat-button type="button" [disabled]="operacion.cargando()" (click)="cancelar(item)">Cancelar</button>
+                }
+              </div>
+            </td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+          <tr mat-row *matRowDef="let item; columns: columnas"></tr>
+        </table>
+      </div>
+    } @else { <app-estado vacio="Todavía no hay campañas para gestionar." /> }
+  }
+</section>

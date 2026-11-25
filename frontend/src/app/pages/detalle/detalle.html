@@ -1,0 +1,50 @@
+<section class="contenedor pagina">
+  <a class="volver" routerLink="/campanias"><span class="icon" aria-hidden="true">arrow_back</span> Campañas</a>
+  <app-estado [cargando]="consulta.cargando()" [error]="consulta.error()" (reintentar)="cargar()" />
+  @if (campania(); as item) {
+    <div class="pagina-cabecera">
+      <span class="etiqueta" [class.etiqueta-social]="item.categoria === 'Social'">{{ item.categoria }}</span>
+      <h1>{{ item.titulo }}</h1>
+      <p>Organizada por
+          @if (item.organizacionId) {
+            <a class="texto-enlace" [routerLink]="['/organizaciones', item.organizacionId]">{{ item.organizacion }}</a>
+          } @else {
+            {{ item.organizacion }}
+          }
+        </p>
+    </div>
+    <div class="detalle-grid">
+      <div class="panel">
+        <h2>Sobre la campaña</h2>
+        <p class="multilinea">{{ item.descripcion }}</p>
+        @if (item.requisitos) {
+          <h2>Qué necesitas</h2>
+          <p class="multilinea">{{ item.requisitos }}</p>
+        }
+      </div>
+      <aside class="panel detalle-resumen">
+        <h2>Cuándo y dónde</h2>
+        <p class="meta"><span class="icon" aria-hidden="true">calendar_today</span> {{ item.fecha | date:"d 'de' MMMM, y · h:mm a" }}</p>
+        <p class="meta"><span class="icon" aria-hidden="true">location_on</span> {{ item.ubicacion }}</p>
+        <p class="meta"><span class="icon" aria-hidden="true">group</span> {{ item.disponibles }} de {{ item.cupos }} cupos disponibles</p>
+        <app-estado [error]="operacion.error()" [reintentable]="false" />
+        @if (item.estado === 'CANCELADA') {
+          <p class="etiqueta neutra">Campaña cancelada</p>
+        } @else if (inscripcion()?.estado === 'ASISTIO') {
+          <p class="etiqueta">Asistencia registrada</p>
+        } @else if (inscripcion()?.estado === 'INSCRITO') {
+          <p class="etiqueta">Ya estás inscrito</p>
+          <button mat-stroked-button type="button" [disabled]="operacion.cargando() || consulta.cargando()" (click)="cancelar()">Cancelar inscripción</button>
+        } @else if (finalizada(item)) {
+          <p class="etiqueta neutra">Campaña finalizada</p>
+        } @else if (!item.disponibles) {
+          <p class="etiqueta neutra">Sin cupos disponibles</p>
+        } @else if (sesion.cuenta()?.rol === 'VOLUNTARIO') {
+          <button mat-flat-button type="button" [disabled]="operacion.cargando() || consulta.cargando()" (click)="inscribir()">Unirme al voluntariado</button>
+        } @else if (!sesion.cuenta()) {
+          <a mat-flat-button routerLink="/ingresar" [queryParams]="{ volver: '/campanias/' + item.id }">Inicia sesión para inscribirte</a>
+        }
+      </aside>
+    </div>
+  }
+</section>

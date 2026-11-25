@@ -1,0 +1,82 @@
+@if (inicio) {
+  <section class="hero">
+    <div class="contenedor hero-inner">
+      <div class="hero-texto">
+        <p class="hero-kicker"><span class="icon" aria-hidden="true">eco</span> Voluntariado ambiental y social</p>
+        <h1>Haz la diferencia <em>cerca de ti.</em></h1>
+        <p class="hero-bajada">Encuentra campañas de voluntariado y conecta con personas que quieren cuidar su comunidad.</p>
+        <a mat-flat-button class="hero-cta" routerLink="/campanias">Explorar campañas <span class="icon" aria-hidden="true">arrow_forward</span></a>
+      </div>
+      <figure class="hero-foto">
+        <img src="voluntarios.webp" width="1360" height="765" alt="Tres voluntarios siembran un árbol en un huerto comunitario" fetchpriority="high">
+        <figcaption><span class="icon" aria-hidden="true">location_on</span> Lima, Perú</figcaption>
+      </figure>
+    </div>
+  </section>
+}
+
+<section class="contenedor catalogo" [class.solo-catalogo]="!inicio">
+  <div class="titulo-fila">
+    <div>
+      @if (inicio) {
+        <h2>Próximas campañas</h2>
+      } @else {
+        <h1>Explorar campañas</h1>
+      }
+      <p>Encuentra una actividad que encaje con tu tiempo e intereses.</p>
+    </div>
+    @if (inicio) {
+      <a class="texto-enlace" routerLink="/campanias">Ver todas las campañas <span class="icon" aria-hidden="true">arrow_forward</span></a>
+    }
+  </div>
+
+  <form class="buscador" [formGroup]="filtros" (ngSubmit)="buscar()">
+    <label>
+      <span class="icon" aria-hidden="true">search</span>
+      <input formControlName="q" placeholder="Buscar campañas" aria-label="Buscar campañas">
+    </label>
+    <label>
+      <span class="icon" aria-hidden="true">location_on</span>
+      <input formControlName="ubicacion" placeholder="Distrito o ciudad" aria-label="Distrito o ciudad">
+    </label>
+    <button mat-flat-button type="submit">Buscar</button>
+  </form>
+
+  <div class="herramientas">
+    <div class="chips" aria-label="Categoría">
+      <button type="button" class="chip" [class.seleccionado]="!categoria()" [attr.aria-pressed]="!categoria()" (click)="buscar('')">Todas</button>
+      @for (opcion of categorias; track opcion) {
+        <button type="button" class="chip" [class.seleccionado]="categoria() === opcion" [attr.aria-pressed]="categoria() === opcion" (click)="buscar(opcion)">
+          <span class="icon" aria-hidden="true">{{ opcion === 'Ambiental' ? 'eco' : 'diversity_3' }}</span> {{ opcion }}
+        </button>
+      }
+    </div>
+    @if (!inicio) {
+      <div class="chips" aria-label="Vista del catálogo">
+        <button class="chip" type="button" [class.seleccionado]="vista() === 'lista'" [attr.aria-pressed]="vista() === 'lista'" (click)="vista.set('lista')"><span class="icon" aria-hidden="true">grid_view</span> Lista</button>
+        <button class="chip" type="button" [class.seleccionado]="vista() === 'mapa'" [attr.aria-pressed]="vista() === 'mapa'" (click)="vista.set('mapa')"><span class="icon" aria-hidden="true">map</span> Mapa</button>
+      </div>
+    }
+  </div>
+
+  @if (vista() === 'mapa') {
+    <section class="panel mapa-reserva" aria-label="Mapa de campañas">
+      <span class="icon" aria-hidden="true">map</span>
+      <h2>Mapa de campañas</h2>
+      <p>Espacio reservado para la futura vista geográfica.</p>
+      <button mat-stroked-button type="button" (click)="vista.set('lista')">Volver a la lista</button>
+    </section>
+  } @else {
+    <app-estado [cargando]="solicitud.cargando()" [error]="solicitud.error()" (reintentar)="cargar()" />
+    @if (!solicitud.cargando() && !solicitud.error()) {
+      @if (visibles().length) {
+        @if (!inicio) { <p class="conteo" aria-live="polite">{{ visibles().length }} {{ visibles().length === 1 ? 'campaña' : 'campañas' }}</p> }
+        <div class="rejilla-campanias">
+          @for (item of visibles(); track item.id) { <app-tarjeta-campania [campania]="item" /> }
+        </div>
+      } @else {
+        <div class="estado" role="status"><span>No encontramos campañas con esos filtros.</span> <button mat-stroked-button type="button" (click)="limpiar()">Limpiar filtros</button></div>
+      }
+    }
+  }
+</section>

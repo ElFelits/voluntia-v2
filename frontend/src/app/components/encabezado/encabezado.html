@@ -1,0 +1,48 @@
+<header class="sitio-header">
+  <div class="contenedor header-inner">
+    <a class="marca" routerLink="/" (click)="menuAbierto.set(false)" aria-label="Voluntia, inicio">
+      <span class="marca-icono icon" aria-hidden="true">volunteer_activism</span>
+      Voluntia<span class="marca-punto" aria-hidden="true">.</span>
+    </a>
+    <button class="nav-toggle" mat-icon-button type="button" [attr.aria-expanded]="menuAbierto()" aria-controls="navegacion" aria-label="Menú de navegación" (click)="menuAbierto.set(!menuAbierto())">
+      <span class="icon" aria-hidden="true">{{ menuAbierto() ? 'close' : 'menu' }}</span>
+    </button>
+    <div id="navegacion" class="header-nav" [class.abierto]="menuAbierto()">
+      <nav class="nav-enlaces" aria-label="Principal">
+        <a routerLink="/" routerLinkActive="actual" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: true }" (click)="menuAbierto.set(false)">Inicio</a>
+        <a routerLink="/campanias" routerLinkActive="actual" ariaCurrentWhenActive="page" (click)="menuAbierto.set(false)">Campañas</a>
+        @if (sesion.cuenta(); as cuenta) {
+          @switch (cuenta.rol) {
+            @case ('VOLUNTARIO') {
+              <a routerLink="/mis-participaciones" routerLinkActive="actual" ariaCurrentWhenActive="page" (click)="menuAbierto.set(false)">Mis participaciones</a>
+              <a routerLink="/chat" routerLinkActive="actual" ariaCurrentWhenActive="page" (click)="menuAbierto.set(false)">Asistente</a>
+            }
+            @default {
+              <a routerLink="/gestion/campanias" routerLinkActive="actual" ariaCurrentWhenActive="page" (click)="menuAbierto.set(false)">Gestionar</a>
+              <a routerLink="/gestion/impacto" routerLinkActive="actual" ariaCurrentWhenActive="page" (click)="menuAbierto.set(false)">Impacto</a>
+              @if (cuenta.rol === 'ADMIN') {
+                <a routerLink="/gestion/cuentas" routerLinkActive="actual" ariaCurrentWhenActive="page" (click)="menuAbierto.set(false)">Cuentas</a>
+              }
+            }
+          }
+        }
+      </nav>
+      <div class="nav-acciones">
+        @if (sesion.cuenta(); as cuenta) {
+          <button mat-stroked-button type="button" [matMenuTriggerFor]="perfil">
+            <span class="icon" aria-hidden="true">account_circle</span> {{ etiquetas[cuenta.rol] }}
+          </button>
+          <mat-menu #perfil="matMenu">
+            @if (cuenta.rol !== 'ADMIN') {
+              <a mat-menu-item routerLink="/mi-cuenta" (click)="menuAbierto.set(false)">Mi cuenta</a>
+            }
+            <button mat-menu-item type="button" [disabled]="saliendo()" (click)="salir()">Cerrar sesión</button>
+          </mat-menu>
+        } @else {
+          <a mat-button routerLink="/ingresar" (click)="menuAbierto.set(false)">Iniciar sesión</a>
+          <a mat-flat-button routerLink="/registro" (click)="menuAbierto.set(false)">Crear cuenta</a>
+        }
+      </div>
+    </div>
+  </div>
+</header>

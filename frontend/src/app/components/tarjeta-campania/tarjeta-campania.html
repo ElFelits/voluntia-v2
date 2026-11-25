@@ -1,0 +1,19 @@
+@let item = campania();
+<article class="tarjeta-campania">
+  <a class="tarjeta-media" [class.social]="item.categoria === 'Social'" [routerLink]="['/campanias', item.id]" [attr.aria-label]="item.titulo" tabindex="-1">
+    <span class="icon" aria-hidden="true">{{ item.categoria === 'Social' ? 'diversity_3' : 'eco' }}</span>
+    <span class="etiqueta" [class.etiqueta-social]="item.categoria === 'Social'">{{ item.categoria }}</span>
+  </a>
+  <div class="tarjeta-cuerpo">
+    <p class="meta"><span class="icon" aria-hidden="true">location_on</span> {{ item.ubicacion }}</p>
+    <h3><a [routerLink]="['/campanias', item.id]">{{ item.titulo }}</a></h3>
+    <p class="tarjeta-organizacion">{{ item.organizacion }}</p>
+    <div class="tarjeta-pie">
+      <span class="meta"><span class="icon" aria-hidden="true">calendar_today</span> {{ item.fecha | date:'d MMM' }}</span>
+      <span class="meta"><span class="icon" aria-hidden="true">group</span>
+        @if (item.disponibles > 0) { {{ item.disponibles }} {{ item.disponibles === 1 ? 'cupo' : 'cupos' }} } @else { Sin cupos }
+      </span>
+      <a class="tarjeta-flecha" [routerLink]="['/campanias', item.id]" [attr.aria-label]="'Ver ' + item.titulo"><span class="icon" aria-hidden="true">arrow_outward</span></a>
+    </div>
+  </div>
+</article>
