@@ -1,3 +1,3 @@
 export const configuracion = {
-  apiUrl: 'http://localhost:8081/api',
+  apiUrl: 'https://voluntia-backend.onrender.com/api',
 };
