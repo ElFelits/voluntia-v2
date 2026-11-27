@@ -8,6 +8,7 @@ export interface Cuenta {
   nombre: string;
   email: string;
   ubicacion: string;
+  direccion?: string | null;
   edad?: number;
   habilidades?: string;
   ruc?: string;
@@ -17,7 +18,7 @@ export interface Cuenta {
 export type Perfil = Omit<Cuenta, 'id' | 'rol'>;
 export type Registro = Perfil & { rol: 'VOLUNTARIO' | 'ORGANIZACION'; contrasena: string };
 export interface Credenciales { email: string; contrasena: string }
-export type OrganizacionPublica = Pick<Cuenta, 'id' | 'nombre' | 'ubicacion' | 'ruc' | 'infoContacto'>;
+export type OrganizacionPublica = Pick<Cuenta, 'id' | 'nombre' | 'ubicacion' | 'direccion' | 'ruc' | 'infoContacto'>;
 
 export interface Campania {
   id: number;
@@ -26,16 +27,32 @@ export interface Campania {
   titulo: string;
   descripcion: string;
   ubicacion: string;
+  direccion?: string | null;
   fecha: string;
   requisitos: string;
   cupos: number;
   disponibles: number;
   categoria: Categoria;
   estado: 'ACTIVA' | 'CANCELADA';
+  portadaId?: number | null;
 }
 
-export type DatosCampania = Pick<Campania, 'titulo' | 'descripcion' | 'ubicacion' | 'fecha' | 'requisitos' | 'cupos' | 'categoria'>;
-export type FiltrosCampania = { q: string; ubicacion: string; categoria: Categoria | '' };
+export type DatosCampania = Pick<Campania, 'titulo' | 'descripcion' | 'ubicacion' | 'direccion' | 'fecha' | 'requisitos' | 'cupos' | 'categoria'>
+  & { portadaBase64?: string };
+export type FiltrosCampania = { q: string; ubicacion?: string; distrito?: string; categoria: Categoria | '' };
+
+export interface FiltrosChat {
+  q: string | null;
+  categoria: Categoria | null;
+  distrito: string | null;
+}
+
+export interface RespuestaChat {
+  texto: string;
+  campanias: Campania[];
+  destino: 'CATALOGO' | 'PARTICIPACIONES' | 'PERFIL' | null;
+  filtros: FiltrosChat | null;
+}
 
 export interface Inscripcion {
   id: number;
@@ -57,7 +74,7 @@ export interface Impacto extends Resultado {
   titulo: string;
   organizacionId: number | null;
   organizacion: string;
-  fecha: string;
+  fecha: string | null;
   asistentes: number;
 }
 
