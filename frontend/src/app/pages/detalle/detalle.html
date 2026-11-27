@@ -13,6 +13,11 @@
           }
         </p>
     </div>
+    @if (portada(); as foto) {
+      @if (portadaFallida() !== foto) {
+        <img class="portada-detalle" [src]="foto" alt="" decoding="async" (error)="portadaFallida.set(foto)">
+      }
+    }
     <div class="detalle-grid">
       <div class="panel">
         <h2>Sobre la campaña</h2>
@@ -25,7 +30,7 @@
       <aside class="panel detalle-resumen">
         <h2>Cuándo y dónde</h2>
         <p class="meta"><span class="icon" aria-hidden="true">calendar_today</span> {{ item.fecha | date:"d 'de' MMMM, y · h:mm a" }}</p>
-        <p class="meta"><span class="icon" aria-hidden="true">location_on</span> {{ item.ubicacion }}</p>
+        <p class="meta"><span class="icon" aria-hidden="true">location_on</span> {{ item.direccion ? item.direccion + ', ' : '' }}{{ item.ubicacion }}</p>
         <p class="meta"><span class="icon" aria-hidden="true">group</span> {{ item.disponibles }} de {{ item.cupos }} cupos disponibles</p>
         <app-estado [error]="operacion.error()" [reintentable]="false" />
         @if (item.estado === 'CANCELADA') {
