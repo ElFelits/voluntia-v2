@@ -1,0 +1,43 @@
+<section class="panel cercania" aria-labelledby="titulo-cercania">
+  <h2 id="titulo-cercania">Campaña más cercana</h2>
+  <div class="mapa-controles">
+    <label>
+      <span>Tu distrito</span>
+      <select #selector (change)="elegirDistrito(selector.value)">
+        <option value="" [selected]="!origen()?.distrito" disabled>Elige tu distrito</option>
+        @for (distrito of distritos; track distrito) {
+          <option [value]="distrito" [selected]="origen()?.distrito === distrito">{{ distrito }}</option>
+        }
+      </select>
+    </label>
+    <button mat-stroked-button type="button" (click)="usarUbicacion()" [disabled]="localizando()">
+      {{ localizando() ? 'Buscando ubicación…' : 'Usar mi ubicación actual' }}
+    </button>
+  </div>
+  @if (errorUbicacion(); as error) { <p class="mapa-aviso" role="status">{{ error }}</p> }
+
+  <figure class="mapa">
+    <canvas #lienzo width="900" height="470" aria-hidden="true"></canvas>
+    <figcaption class="mapa-leyenda">
+      @if (origen(); as ubicacion) {
+        <span><i class="marca-origen" aria-hidden="true"></i>{{ ubicacion.distrito || 'Tu ubicación actual' }}</span>
+      }
+      @if (cercana(); as resultado) {
+        <span><i class="marca-destino" aria-hidden="true"></i>{{ resultado.distrito }} · campaña</span>
+      }
+      <a href="https://geocatmin.ingemmet.gob.pe/arcgis/rest/services/WGS84_18/WEBGIS_VALIDACION_DM_WGS84_18/MapServer/0" target="_blank" rel="noopener">Límites INEI / INGEMMET</a>
+    </figcaption>
+  </figure>
+
+  <div class="mapa-resultado" aria-live="polite">
+    @if (cercana(); as resultado) {
+      <a class="texto-enlace" [routerLink]="['/campanias', resultado.campania.id]">{{ resultado.campania.titulo }}</a>
+      <p>{{ textoDistancia() }} · {{ resultado.distrito }}</p>
+    } @else if (!hayCampanias()) {
+      <p>No hay campañas con cupos y distrito identificado para estos filtros.</p>
+    } @else {
+      <p>Elige tu distrito o usa tu ubicación actual para comparar las campañas.</p>
+    }
+  </div>
+  <p class="mapa-nota">La distancia se estima en línea recta hasta un punto de referencia del distrito de la campaña.</p>
+</section>

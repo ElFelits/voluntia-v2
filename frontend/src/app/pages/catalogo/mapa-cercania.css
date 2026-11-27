@@ -1,0 +1,30 @@
+.cercania { display: grid; gap: 14px; }
+.cercania h2, .cercania p, .mapa { margin: 0; }
+.mapa-controles { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; }
+.mapa-controles label { display: grid; gap: 4px; max-width: 100%; font-weight: 700; }
+.mapa-controles select {
+  min-height: 42px;
+  max-width: 100%;
+  padding: 0 10px;
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--tinta);
+  font: inherit;
+}
+.mapa {
+  overflow: hidden;
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  background: #f7faf6;
+}
+.mapa canvas { display: block; width: 100%; height: auto; background: #e3eff1; }
+.mapa-leyenda { display: flex; flex-wrap: wrap; gap: 5px 16px; padding: 7px 12px; font-size: .85rem; }
+.mapa-leyenda span { display: inline-flex; align-items: center; gap: 6px; }
+.mapa-leyenda a { margin-inline-start: auto; }
+.mapa-leyenda i { width: 10px; height: 10px; border-radius: 50%; }
+.marca-origen { background: #216aa0; }
+.marca-destino { background: #276238; }
+.mapa-resultado { display: grid; gap: 3px; }
+.mapa-resultado a { justify-self: start; font-size: 1.1rem; }
+.mapa-nota, .mapa-aviso { font-size: .9rem; }
