@@ -47,25 +47,62 @@
           </article>
         }
       </div>
-      <section class="panel grafico">
+      <section class="panel grafico" aria-labelledby="titulo-grafico">
         <div class="titulo-fila">
-          <h2>Resultados por campaña</h2>
-          <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <mat-label>Indicador</mat-label>
-            <mat-select [formControl]="form.controls.metrica">
-              @for (item of metricas; track item.clave) { <mat-option [value]="item.clave">{{ item.etiqueta }}</mat-option> }
-            </mat-select>
-          </mat-form-field>
+          <h2 id="titulo-grafico">Gráficos de impacto</h2>
+          <div class="grafico-controles">
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Tipo de gráfico</mat-label>
+              <mat-select [formControl]="form.controls.vista">
+                @for (item of vistas; track item.clave) { <mat-option [value]="item.clave">{{ item.etiqueta }}</mat-option> }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Indicador</mat-label>
+              <mat-select [formControl]="form.controls.metrica">
+                @for (item of metricas; track item.clave) { <mat-option [value]="item.clave">{{ item.etiqueta }}</mat-option> }
+              </mat-select>
+            </mat-form-field>
+          </div>
         </div>
-        <ul [attr.aria-label]="etiquetaGrafico() + ' por campaña'">
-          @for (item of grafico(); track item.id) {
-            <li>
-              <span>{{ item.titulo }}</span>
-              <div class="barra-fondo" aria-hidden="true"><div class="barra-valor" [style.width.%]="item.porcentaje"></div></div>
-              <strong>{{ item.valor | number:'1.0-2' }}</strong>
-            </li>
+        @if (vista() === 'distribucion') {
+          @let datos = distribucion();
+          @if (datos.partes.length) {
+            <div class="grafico-distribucion">
+              <div class="grafico-anillo" [style.background]="datos.fondo" aria-hidden="true">
+                <strong>{{ datos.total | number:'1.0-2' }}</strong>
+              </div>
+              <ul [attr.aria-label]="'Distribución de ' + etiquetaGrafico()">
+                @for (item of datos.partes; track item.id) {
+                  <li>
+                    <span><i [style.background]="item.color" aria-hidden="true"></i>{{ item.titulo }}</span>
+                    <span>{{ item.valor | number:'1.0-2' }}</span>
+                    <strong>{{ item.proporcion * 100 | number:'1.0-1' }} %</strong>
+                  </li>
+                }
+              </ul>
+            </div>
+          } @else {
+            <p role="status">El indicador seleccionado suma cero en estas campañas.</p>
           }
-        </ul>
+        } @else {
+          @if (vista() === 'mensual') {
+            <p>Totales por mes según la fecha de cada campaña.</p>
+          }
+          @if (barras().length) {
+            <ul [attr.aria-label]="etiquetaGrafico() + (vista() === 'mensual' ? ' por mes' : ' por campaña')">
+              @for (item of barras(); track item.id) {
+                <li>
+                  <span>{{ item.titulo }}</span>
+                  <div class="barra-fondo" aria-hidden="true"><div class="barra-valor" [style.width.%]="item.porcentaje"></div></div>
+                  <strong>{{ item.valor | number:'1.0-2' }}</strong>
+                </li>
+              }
+            </ul>
+          } @else {
+            <p role="status">Las campañas seleccionadas no tienen fechas para agrupar.</p>
+          }
+        }
       </section>
     } @else { <app-estado vacio="No hay resultados para los filtros seleccionados." /> }
   }
