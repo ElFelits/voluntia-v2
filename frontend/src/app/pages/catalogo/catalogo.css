@@ -67,13 +67,10 @@
 .buscador label { display: flex; align-items: center; gap: 10px; padding-left: 13px; min-width: 0; }
 .buscador label + label { border-left: 1px solid var(--borde); }
 .buscador .icon { color: #5a7467; }
-.buscador input { width: 100%; min-width: 0; min-height: 42px; border: 0; padding-right: 8px; color: var(--tinta); background: transparent; }
-.buscador input:focus-visible { outline-offset: 0; }
+.buscador :is(input, select) { width: 100%; min-width: 0; min-height: 42px; border: 0; padding-right: 8px; color: var(--tinta); background: transparent; }
+.buscador :is(input, select):focus-visible { outline-offset: 0; }
 .buscador button { min-height: 42px; padding-inline: 26px; }
 .herramientas { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin: 18px 0 20px; }
-.mapa-reserva { display: grid; justify-items: center; text-align: center; align-content: center; min-height: 310px; border-style: dashed; }
-.mapa-reserva > .icon { font-size: 40px; color: #47774e; margin-bottom: 12px; }
-.mapa-reserva h2 { font-size: 1.45rem; }
 .conteo { margin: 0 0 12px; font-size: .9rem; }
 @media (max-width: 760px) {
   .hero { padding: 28px 0 23px; }
