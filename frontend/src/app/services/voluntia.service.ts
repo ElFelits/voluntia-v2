@@ -3,7 +3,7 @@ import { computed, inject, Injectable, signal } from '@angular/core';
 import { catchError, map, of, shareReplay, tap } from 'rxjs';
 import {
   Campania, Cuenta, Credenciales, DatosCampania, FiltrosCampania, Impacto, Inscripcion,
-  OrganizacionPublica, Participacion, Perfil, Registro, Resultado,
+  FiltrosChat, OrganizacionPublica, Participacion, Perfil, Registro, RespuestaChat, Resultado,
 } from '../models/voluntia';
 import { configuracion } from './configuracion';
 
@@ -20,17 +20,22 @@ export class VoluntiaService {
   private http = inject(HttpClient);
   private base = configuracion.apiUrl.replace(/\/$/, '');
   private opciones = { withCredentials: true };
+  readonly distritos = this.http.get<readonly string[]>(this.base + '/distritos').pipe(shareReplay(1));
 
   listarCampanias(filtros?: FiltrosCampania, gestion = false) {
     let params = new HttpParams();
     if (gestion) params = params.set('gestion', 'true');
     for (const [campo, valor] of Object.entries(filtros ?? {})) {
-      if (valor.trim()) params = params.set(campo, valor.trim());
+      const texto = valor?.trim();
+      if (texto) params = params.set(campo, texto);
     }
     return this.http.get<Campania[]>(this.base + '/campanias', { ...this.opciones, params });
   }
 
   campania(id: number) { return this.http.get<Campania>(this.rutaCampania(id), this.opciones); }
+  portadaUrl(item: Campania): string | null {
+    return item.portadaId ? this.rutaCampania(item.id) + '/portada/' + item.portadaId : null;
+  }
   publicar(datos: DatosCampania) { return this.http.post<Campania>(this.base + '/campanias', datos, this.opciones); }
   editarCampania(id: number, datos: DatosCampania) { return this.http.put<Campania>(this.rutaCampania(id), datos, this.opciones); }
   cancelarCampania(id: number) { return this.http.delete<void>(this.rutaCampania(id), this.opciones); }
@@ -46,6 +51,9 @@ export class VoluntiaService {
   }
 
   misParticipaciones() { return this.http.get<Participacion[]>(this.base + '/mis-participaciones', this.opciones); }
+  preguntarChat(mensaje: string, anterior: FiltrosChat | null) {
+    return this.http.post<RespuestaChat>(this.base + '/chat', { mensaje, anterior }, this.opciones);
+  }
   miInscripcion(id: number) { return this.http.get<Inscripcion | null>(this.rutaCampania(id) + '/mi-inscripcion', this.opciones); }
   inscribir(id: number) { return this.http.post<Inscripcion>(this.rutaCampania(id) + '/mi-inscripcion', {}, this.opciones); }
   cancelarInscripcion(id: number) { return this.http.delete<void>(this.rutaCampania(id) + '/mi-inscripcion', this.opciones); }
