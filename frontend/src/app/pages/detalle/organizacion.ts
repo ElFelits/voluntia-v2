@@ -17,7 +17,7 @@ import { VoluntiaService } from '../../services/voluntia.service';
       @if (organizacion(); as item) {
         <div class="pagina-cabecera">
           <h1>{{ item.nombre }}</h1>
-          <p class="meta"><span class="icon" aria-hidden="true">location_on</span> {{ item.ubicacion }}</p>
+          <p class="meta"><span class="icon" aria-hidden="true">location_on</span> {{ item.direccion ? item.direccion + ', ' : '' }}{{ item.ubicacion }}</p>
         </div>
         <div class="panel ficha">
           @if (item.ruc) { <p><strong>RUC</strong> {{ item.ruc }}</p> }
