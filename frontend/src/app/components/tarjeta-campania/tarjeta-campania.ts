@@ -1,7 +1,8 @@
 import { DatePipe } from '@angular/common';
-import { Component, input } from '@angular/core';
+import { Component, computed, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Campania } from '../../models/voluntia';
+import { VoluntiaService } from '../../services/voluntia.service';
 
 @Component({
   selector: 'app-tarjeta-campania',
@@ -10,4 +11,7 @@ import { Campania } from '../../models/voluntia';
 })
 export class TarjetaCampania {
   campania = input.required<Campania>();
+  private api = inject(VoluntiaService);
+  readonly portada = computed(() => this.api.portadaUrl(this.campania()));
+  readonly portadaFallida = signal<string | null>(null);
 }
