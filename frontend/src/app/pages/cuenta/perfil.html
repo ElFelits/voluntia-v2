@@ -28,9 +28,15 @@
           <mat-error>Ingresa un correo válido.</mat-error>
         </mat-form-field>
         <mat-form-field appearance="outline">
-          <mat-label>Ubicación</mat-label>
-          <input matInput formControlName="ubicacion" maxlength="255">
-          <mat-error>Ingresa tu ciudad o distrito.</mat-error>
+          <mat-label>Distrito de Lima</mat-label>
+          <mat-select formControlName="ubicacion">
+            @for (distrito of distritos(); track distrito) { <mat-option [value]="distrito">{{ distrito }}</mat-option> }
+          </mat-select>
+          <mat-error>Selecciona un distrito.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ rol() === 'ORGANIZACION' ? 'Dirección pública (opcional)' : 'Dirección (opcional)' }}</mat-label>
+          <input matInput formControlName="direccion" autocomplete="street-address" maxlength="255">
         </mat-form-field>
         @if (registro) {
           <mat-form-field appearance="outline">
