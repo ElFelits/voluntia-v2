@@ -1,7 +1,44 @@
 <section class="contenedor pagina pagina-angosta">
   <div class="pagina-cabecera"><h1>Asistente Voluntia</h1></div>
-  <div class="panel">
-    <p>Espacio reservado para el futuro chatbot de Voluntia.</p>
-    <a class="texto-enlace" routerLink="/campanias">Explorar campañas</a>
+  <div class="panel chat">
+    <div #conversacion class="chat-conversacion" role="log" tabindex="0" aria-label="Conversación con el asistente">
+      @for (mensaje of mensajes(); track $index) {
+        @if ('pregunta' in mensaje) {
+          <p class="chat-pregunta"><strong>Tú</strong>{{ mensaje.pregunta }}</p>
+        } @else {
+          @let respuesta = mensaje.respuesta;
+          <div class="chat-respuesta">
+            <strong>Asistente</strong>
+            <p>{{ respuesta.texto }}</p>
+            @if (respuesta.campanias.length) {
+              <ul>
+                @for (item of respuesta.campanias; track item.id) {
+                  <li>
+                    <a class="texto-enlace" [routerLink]="['/campanias', item.id]">{{ item.titulo }}</a>
+                    <small>{{ item.fecha | date:'d MMM, h:mm a' }} · {{ item.ubicacion }}</small>
+                  </li>
+                }
+              </ul>
+            }
+            @if (respuesta.destino) {
+              @let enlace = enlaces[respuesta.destino];
+              <a class="texto-enlace" [routerLink]="enlace.ruta">{{ enlace.etiqueta }}</a>
+            }
+          </div>
+        }
+      }
+      @if (respondiendo()) { <p class="chat-espera">Consultando Voluntia…</p> }
+    </div>
+    <div class="chat-sugerencias" aria-label="Preguntas sugeridas">
+      @for (sugerencia of sugerencias(); track sugerencia) {
+        <button class="chip" type="button" (click)="enviar(sugerencia)" [disabled]="respondiendo()">{{ sugerencia }}</button>
+      }
+    </div>
+    <form class="chat-form" (ngSubmit)="enviar()">
+      <label for="pregunta-asistente">Tu pregunta</label>
+      <input id="pregunta-asistente" class="chat-entrada" [formControl]="pregunta"
+             maxlength="240" autocomplete="off" placeholder="Ej. ¿Hay campañas en Lima?">
+      <button mat-flat-button type="submit" [disabled]="respondiendo() || !pregunta.value.trim()">Enviar</button>
+    </form>
   </div>
 </section>
