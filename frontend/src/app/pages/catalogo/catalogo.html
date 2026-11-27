@@ -37,7 +37,11 @@
     </label>
     <label>
       <span class="icon" aria-hidden="true">location_on</span>
-      <input formControlName="ubicacion" placeholder="Distrito o ciudad" aria-label="Distrito o ciudad">
+      <select formControlName="ubicacion" aria-label="Distrito de Lima">
+        <option value="">Todos los distritos</option>
+        @if (ubicacionAnterior(); as ubicacion) { <option [value]="ubicacion">{{ ubicacion }}</option> }
+        @for (distrito of distritos(); track distrito) { <option [value]="distrito">{{ distrito }}</option> }
+      </select>
     </label>
     <button mat-flat-button type="submit">Buscar</button>
   </form>
@@ -59,24 +63,21 @@
     }
   </div>
 
+  <app-estado [cargando]="solicitud.cargando()" [error]="solicitud.error()" (reintentar)="cargar()" />
   @if (vista() === 'mapa') {
-    <section class="panel mapa-reserva" aria-label="Mapa de campañas">
-      <span class="icon" aria-hidden="true">map</span>
-      <h2>Mapa de campañas</h2>
-      <p>Espacio reservado para la futura vista geográfica.</p>
-      <button mat-stroked-button type="button" (click)="vista.set('lista')">Volver a la lista</button>
-    </section>
-  } @else {
-    <app-estado [cargando]="solicitud.cargando()" [error]="solicitud.error()" (reintentar)="cargar()" />
-    @if (!solicitud.cargando() && !solicitud.error()) {
-      @if (visibles().length) {
-        @if (!inicio) { <p class="conteo" aria-live="polite">{{ visibles().length }} {{ visibles().length === 1 ? 'campaña' : 'campañas' }}</p> }
-        <div class="rejilla-campanias">
-          @for (item of visibles(); track item.id) { <app-tarjeta-campania [campania]="item" /> }
-        </div>
-      } @else {
-        <div class="estado" role="status"><span>No encontramos campañas con esos filtros.</span> <button mat-stroked-button type="button" (click)="limpiar()">Limpiar filtros</button></div>
+    <div [hidden]="solicitud.cargando() || !!solicitud.error()">
+      @defer (when vista() === 'mapa') {
+        <app-mapa-cercania [campanias]="campanias()" />
       }
+    </div>
+  } @else if (!solicitud.cargando() && !solicitud.error()) {
+    @if (visibles().length) {
+      @if (!inicio) { <p class="conteo" aria-live="polite">{{ visibles().length }} {{ visibles().length === 1 ? 'campaña' : 'campañas' }}</p> }
+      <div class="rejilla-campanias">
+        @for (item of visibles(); track item.id) { <app-tarjeta-campania [campania]="item" /> }
+      </div>
+    } @else {
+      <div class="estado" role="status"><span>No encontramos campañas con esos filtros.</span> <button mat-stroked-button type="button" (click)="limpiar()">Limpiar filtros</button></div>
     }
   }
 </section>
