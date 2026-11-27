@@ -3,14 +3,17 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { switchMap } from 'rxjs';
 import { Estado } from '../../components/estado/estado';
 import { Solicitud } from '../../components/estado/solicitud';
 import { TarjetaCampania } from '../../components/tarjeta-campania/tarjeta-campania';
 import { Campania, categorias, FiltrosCampania } from '../../models/voluntia';
+import { buscarDistrito } from '../../models/ubicacion';
 import { VoluntiaService } from '../../services/voluntia.service';
+import { MapaCercania } from './mapa-cercania';
 
 @Component({
-  imports: [ReactiveFormsModule, RouterLink, MatButtonModule, Estado, TarjetaCampania],
+  imports: [ReactiveFormsModule, RouterLink, MatButtonModule, Estado, TarjetaCampania, MapaCercania],
   templateUrl: './catalogo.html',
   styleUrl: './catalogo.css',
 })
@@ -21,6 +24,8 @@ export class Catalogo {
   private fb = inject(FormBuilder);
   readonly inicio = this.route.snapshot.routeConfig?.path === '';
   readonly categorias = categorias;
+  readonly distritos = signal<readonly string[]>([]);
+  readonly ubicacionAnterior = signal('');
   readonly categoria = signal<FiltrosCampania['categoria']>('');
   readonly vista = signal<'lista' | 'mapa'>('lista');
   readonly campanias = signal<Campania[]>([]);
@@ -39,7 +44,15 @@ export class Catalogo {
 
   cargar(): void {
     this.solicitud.ejecutar(
-      this.api.listarCampanias({ ...this.filtros.getRawValue(), categoria: this.categoria() }),
+      this.api.distritos.pipe(switchMap(distritos => {
+        this.distritos.set(distritos);
+        const ubicacion = this.route.snapshot.queryParamMap.get('ubicacion') ?? '';
+        const distrito = buscarDistrito(distritos, ubicacion);
+        this.ubicacionAnterior.set(distrito ? '' : ubicacion);
+        this.filtros.controls.ubicacion.setValue(distrito || ubicacion);
+        const { q } = this.filtros.getRawValue();
+        return this.api.listarCampanias({ q, distrito, ubicacion: distrito ? '' : ubicacion, categoria: this.categoria() });
+      })),
       campanias => this.campanias.set(campanias),
     );
   }
