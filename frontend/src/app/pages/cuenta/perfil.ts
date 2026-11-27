@@ -7,10 +7,11 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { map } from 'rxjs';
+import { forkJoin, map, of } from 'rxjs';
 import { Estado } from '../../components/estado/estado';
 import { Solicitud } from '../../components/estado/solicitud';
 import { Cuenta, Perfil, Rol } from '../../models/voluntia';
+import { camposUbicacion } from '../../models/ubicacion';
 import { SesionService, VoluntiaService } from '../../services/voluntia.service';
 
 const textoObligatorio = [Validators.required, Validators.pattern(/\S/)];
@@ -32,14 +33,16 @@ export class PerfilPagina {
   readonly rol = signal<Rol>('VOLUNTARIO');
   readonly consulta = new Solicitud();
   readonly operacion = new Solicitud();
-  readonly listo = signal(this.registro);
+  readonly listo = signal(false);
+  readonly distritos = signal<readonly string[]>([]);
   private id = 0;
   private tipo: 'voluntarios' | 'organizaciones' = 'voluntarios';
   readonly form = inject(FormBuilder).group({
     rol: inject(FormBuilder).nonNullable.control<'VOLUNTARIO' | 'ORGANIZACION'>('VOLUNTARIO'),
     nombre: ['', [...textoObligatorio, Validators.maxLength(100)]],
     email: ['', [Validators.required, Validators.email, Validators.maxLength(100)]],
-    ubicacion: ['', [...textoObligatorio, Validators.maxLength(255)]],
+    ubicacion: ['', Validators.required],
+    direccion: ['', Validators.maxLength(255)],
     contrasena: ['', this.registro ? [Validators.required, Validators.minLength(8), Validators.maxLength(72)] : []],
     edad: [null as number | null, [Validators.required, Validators.min(16), Validators.max(120), Validators.pattern(/^\d+$/)]],
     habilidades: ['', Validators.maxLength(255)],
@@ -51,6 +54,7 @@ export class PerfilPagina {
     this.form.controls.rol.valueChanges.pipe(takeUntilDestroyed()).subscribe(rol => this.configurar(rol));
     if (this.registro) {
       this.configurar('VOLUNTARIO');
+      this.cargar();
     } else {
       this.route.paramMap.pipe(takeUntilDestroyed()).subscribe(() => this.cargar());
     }
@@ -58,6 +62,14 @@ export class PerfilPagina {
 
   cargar(): void {
     this.listo.set(false);
+    if (this.registro) {
+      this.consulta.ejecutar(this.api.distritos, distritos => {
+        this.distritos.set(distritos);
+        this.listo.set(true);
+      });
+      return;
+    }
+    let cuenta = of<Cuenta | undefined>(this.sesion.cuenta() ?? undefined);
     if (this.admin) {
       const params = this.route.snapshot.paramMap;
       const tipo = params.get('tipo');
@@ -67,12 +79,14 @@ export class PerfilPagina {
         return;
       }
       this.tipo = tipo;
-      this.consulta.ejecutar(this.api.cuentas(this.tipo).pipe(
+      cuenta = this.api.cuentas(this.tipo).pipe(
         map(cuentas => cuentas.find(cuenta => cuenta.id === this.id)),
-      ), cuenta => this.cargarCuenta(cuenta));
-      return;
+      );
     }
-    this.cargarCuenta(this.sesion.cuenta() ?? undefined);
+    this.consulta.ejecutar(forkJoin({ cuenta, distritos: this.api.distritos }), datos => {
+      this.distritos.set(datos.distritos);
+      this.cargarCuenta(datos.cuenta);
+    });
   }
 
   private cargarCuenta(cuenta: Cuenta | undefined): void {
@@ -80,8 +94,11 @@ export class PerfilPagina {
       this.consulta.error.set('No encontramos esta cuenta.');
       return;
     }
-    const { nombre, email, ubicacion, edad, habilidades, ruc, infoContacto } = cuenta;
-    this.form.patchValue({ nombre, email, ubicacion, edad: edad ?? null, habilidades: habilidades ?? '', ruc: ruc ?? '', infoContacto: infoContacto ?? '' });
+    const { nombre, email, edad, habilidades, ruc, infoContacto } = cuenta;
+    this.form.patchValue({
+      nombre, email, ...camposUbicacion(cuenta, this.distritos()), edad: edad ?? null,
+      habilidades: habilidades ?? '', ruc: ruc ?? '', infoContacto: infoContacto ?? '',
+    });
     this.configurar(cuenta.rol);
     this.listo.set(true);
   }
@@ -101,8 +118,8 @@ export class PerfilPagina {
   guardar(): void {
     this.form.markAllAsTouched();
     if (this.form.invalid || this.operacion.cargando()) return;
-    const { nombre, email, ubicacion, edad, habilidades, ruc, infoContacto, contrasena, rol } = this.form.getRawValue();
-    const datos: Perfil = { nombre: nombre!.trim(), email: email!.trim(), ubicacion: ubicacion!.trim() };
+    const { nombre, email, ubicacion, direccion, edad, habilidades, ruc, infoContacto, contrasena, rol } = this.form.getRawValue();
+    const datos: Perfil = { nombre: nombre!.trim(), email: email!.trim(), ubicacion: ubicacion!, direccion: direccion?.trim() ?? '' };
     if (this.rol() === 'VOLUNTARIO') Object.assign(datos, { edad: edad!, habilidades: habilidades?.trim() });
     if (this.rol() === 'ORGANIZACION') Object.assign(datos, { ruc: ruc!.trim(), infoContacto: infoContacto!.trim() });
     const resultado = this.registro ? this.sesion.registrar({ ...datos, rol, contrasena: contrasena! })
