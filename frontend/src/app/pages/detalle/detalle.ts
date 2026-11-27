@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
@@ -25,6 +25,11 @@ export class Detalle {
   readonly consulta = new Solicitud();
   readonly operacion = new Solicitud();
   readonly campania = signal<Campania | null>(null);
+  readonly portada = computed(() => {
+    const item = this.campania();
+    return item ? this.api.portadaUrl(item) : null;
+  });
+  readonly portadaFallida = signal<string | null>(null);
   readonly inscripcion = signal<Inscripcion | null>(null);
   readonly hoy = Date.now();
   private id = 0;
