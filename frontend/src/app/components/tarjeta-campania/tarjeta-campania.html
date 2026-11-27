@@ -2,6 +2,11 @@
 <article class="tarjeta-campania">
   <a class="tarjeta-media" [class.social]="item.categoria === 'Social'" [routerLink]="['/campanias', item.id]" [attr.aria-label]="item.titulo" tabindex="-1">
     <span class="icon" aria-hidden="true">{{ item.categoria === 'Social' ? 'diversity_3' : 'eco' }}</span>
+    @if (portada(); as foto) {
+      @if (portadaFallida() !== foto) {
+        <img [src]="foto" alt="" loading="lazy" decoding="async" (error)="portadaFallida.set(foto)">
+      }
+    }
     <span class="etiqueta" [class.etiqueta-social]="item.categoria === 'Social'">{{ item.categoria }}</span>
   </a>
   <div class="tarjeta-cuerpo">
