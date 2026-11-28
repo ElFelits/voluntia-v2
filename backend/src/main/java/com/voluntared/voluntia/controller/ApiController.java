@@ -192,6 +192,61 @@ public class ApiController {
         return angular.registrarResultado(id, resultado);
     }
     
+    private record ReglaChat(List<String> claves, String respuesta, String destino) {}
+
+    private static final List<ReglaChat> REGLAS_CHAT = List.of(
+        new ReglaChat(
+            List.of("hola", "buenos dias", "buenas tardes", "buenas noches", "hey", "que tal"),
+            "¡Hola! Puedo ayudarte a buscar campañas por tema, categoría (Ambiental o Social) o distrito, revisar tus inscripciones y resolver dudas sobre Voluntia.",
+            "CATALOGO"
+        ),
+        new ReglaChat(
+            List.of("que es voluntia", "de que trata", "para que sirve", "ayuda", "que puedes hacer", "opciones"),
+            "Voluntia conecta voluntarios con organizaciones que impulsan campañas ambientales y sociales en Lima. Puedes explorar actividades, inscribirte gratis y hacer seguimiento a tus participaciones.",
+            "CATALOGO"
+        ),
+        new ReglaChat(
+            List.of("cancelar inscripcion", "desinscribirme", "salir de campana", "retirarme", "no puedo ir"),
+            "Si ya no puedes asistir, entra a la ficha de la campaña o a Mis participaciones y pulsa Cancelar inscripción para liberar tu cupo.",
+            "PARTICIPACIONES"
+        ),
+        new ReglaChat(
+            List.of("como me inscribo", "como participar", "inscribirme", "unirme", "postular"),
+            "Para inscribirte: 1) Inicia sesión como voluntario. 2) Abre Explorar campañas y selecciona una actividad. 3) Pulsa Inscribirme si aún hay cupos disponibles.",
+            "CATALOGO"
+        ),
+        new ReglaChat(
+            List.of("costo", "gratis", "pagar", "precio", "cobran", "gratuito"),
+            "Participar en las campañas de Voluntia es 100% gratuito. Solo necesitas crear tu cuenta e inscribirte en la actividad que elijas.",
+            "CATALOGO"
+        ),
+        new ReglaChat(
+            List.of("requisito", "edad", "necesito", "menor de edad", "16 anos"),
+            "Para registrarte como voluntario debes tener al menos 16 años. Además, cada campaña muestra sus requisitos específicos (materiales, horario o recomendaciones) dentro de su detalle.",
+            "CATALOGO"
+        ),
+        new ReglaChat(
+            List.of("publicar", "crear campana", "soy organizacion", "registrar organizacion", "ruc", "ong"),
+            "Si representas una organización, regístrate eligiendo el perfil Organización con tu RUC y datos de contacto. Desde tu panel podrás crear campañas, gestionar voluntarios y registrar resultados.",
+            null
+        ),
+        new ReglaChat(
+            List.of("categorias", "tipos de campana", "que hacen", "ambiental y social"),
+            "En Voluntia manejamos dos categorías principales: Ambiental (limpieza de playas, arborización, reciclaje) y Social (refuerzo escolar, donaciones, apoyo comunitario).",
+            "CATALOGO"
+        ),
+        new ReglaChat(
+            List.of("contacto", "soporte", "problema", "error", "correo", "ayuda tecnica"),
+            "Si tienes algún inconveniente con una campaña, revisa los datos de contacto de la organización dentro de su perfil público, o actualiza los datos de tu cuenta desde Mi cuenta.",
+            "PERFIL"
+        ),
+        new ReglaChat(
+            List.of("gracias", "muchas gracias", "genial", "perfecto", "chau", "adios", "listo"),
+            "¡Con gusto! Si necesitas buscar otra campaña o revisar tus inscripciones, aquí estoy.",
+            null
+        )
+    );
+
     @PostMapping("/chat")
     public Map<String, Object> chat(@RequestBody Map<String, Object> body, Authentication actor) {
         String mensaje = body.get("mensaje") == null ? "" : body.get("mensaje").toString().trim();
@@ -199,14 +254,15 @@ public class ApiController {
         Map<?, ?> anterior = body.get("anterior") instanceof Map<?, ?> m ? m : Map.of();
         boolean autenticado = actor != null && !(actor instanceof AnonymousAuthenticationToken);
 
-        if (norm.contains("como me inscribo") || norm.contains("como participar") || norm.contains("inscribirme") || norm.equals("hola")) {
-            return respuestaChat(
-                "Para inscribirte: 1) Inicia sesión con tu cuenta de voluntario. 2) Entra a Explorar campañas y abre la actividad que te interese. 3) Pulsa el botón Inscribirme si aún hay cupos disponibles.",
-                List.of(), "CATALOGO", null
-            );
+        // 1. Buscar coincidencia en respuestas predeterminadas
+        for (ReglaChat regla : REGLAS_CHAT) {
+            if (regla.claves().stream().anyMatch(norm::contains)) {
+                return respuestaChat(regla.respuesta(), List.of(), regla.destino(), null);
+            }
         }
 
-        if (norm.contains("inscripcion") || norm.contains("participacion") || norm.contains("inscrito")) {
+        // 2. Consultar inscripciones reales del voluntario
+        if (norm.contains("inscripcion") || norm.contains("participacion") || norm.contains("inscrito") || norm.contains("historial")) {
             if (!autenticado) {
                 return respuestaChat(
                     "Inicia sesión con tu cuenta de voluntario para revisar tus inscripciones activas y tu historial.",
@@ -215,7 +271,7 @@ public class ApiController {
             }
             if (!acceso.rol("VOLUNTARIO")) {
                 return respuestaChat(
-                    "Tu cuenta tiene perfil de organización o administrador. Puedes revisar los participantes desde la gestión de cada campaña.",
+                    "Tu cuenta tiene perfil de organización o administrador. Puedes gestionar los inscritos desde cada campaña.",
                     List.of(), "CATALOGO", null
                 );
             }
@@ -235,11 +291,12 @@ public class ApiController {
             );
         }
 
+        // 3. Detectar categoría, distrito y palabras clave en preguntas abiertas
         String categoria = norm.contains("ambiental") ? "Ambiental"
                 : (norm.contains("social") ? "Social" : null);
 
         String distrito = null;
-        if (norm.contains("cerca de mi") || norm.contains("mi distrito") || norm.contains("mi zona")) {
+        if (norm.contains("cerca de mi") || norm.contains("mi distrito") || norm.contains("mi zona") || norm.contains("por aqui")) {
             if (!autenticado) {
                 return respuestaChat(
                     "Inicia sesión y guarda tu distrito en Mi cuenta para mostrarte las campañas cerca de ti.",
@@ -249,7 +306,7 @@ public class ApiController {
             String miUbicacion = cuentas.miCuenta().getUbicacion();
             if (miUbicacion == null || miUbicacion.isBlank()) {
                 return respuestaChat(
-                    "Aún no tienes un distrito configurado en tu perfil. Actualízalo en Mi cuenta para buscar cerca de ti.",
+                    "Aún no tienes un distrito guardado en tu perfil. Actualízalo en Mi cuenta para buscar cerca de ti.",
                     List.of(), "PERFIL", null
                 );
             }
@@ -263,6 +320,7 @@ public class ApiController {
             }
         }
 
+        // Mantener contexto del mensaje anterior (ej. "Campañas ambientales" -> "¿Y en Comas?")
         if (categoria == null && distrito != null && anterior.get("categoria") instanceof String catAnt && !catAnt.isBlank()) {
             categoria = catAnt;
         }
@@ -270,20 +328,22 @@ public class ApiController {
             distrito = distAnt;
         }
 
-        boolean pideCampanias = categoria != null || distrito != null
-                || norm.contains("campana") || norm.contains("proxima") || norm.contains("disponible");
-
-        String q = pideCampanias ? null : mensaje;
-        List<CampaniaVista> encontradas = angular.listar(q, distrito, categoria, false).stream().limit(5).toList();
+        List<String> palabrasClave = extraerPalabrasClaveChat(norm, distrito);
+        List<CampaniaVista> base = angular.listar(null, distrito, categoria, false);
+        List<CampaniaVista> encontradas = base.stream()
+                .filter(c -> palabrasClave.isEmpty() || palabrasClave.stream().anyMatch(p ->
+                        normalizarChat(c.titulo() + " " + c.descripcion() + " " + c.organizacion()).contains(p)))
+                .limit(5)
+                .toList();
 
         Map<String, String> filtros = new LinkedHashMap<>();
         if (categoria != null) filtros.put("categoria", categoria);
         if (distrito != null) filtros.put("distrito", distrito);
-        if (q != null && !q.isBlank()) filtros.put("q", q);
+        if (!palabrasClave.isEmpty()) filtros.put("q", String.join(" ", palabrasClave));
 
         if (encontradas.isEmpty()) {
             return respuestaChat(
-                "No encontré campañas próximas con ese criterio. Puedes probar con otra categoría (Ambiental o Social) o revisar todo el catálogo.",
+                "No encontré campañas con ese criterio. Prueba preguntarme por campañas ambientales, sociales, por un distrito (ej. Miraflores, Comas) o temas como limpieza, plantas o refuerzo escolar.",
                 List.of(), "CATALOGO", filtros.isEmpty() ? null : filtros
             );
         }
@@ -294,6 +354,26 @@ public class ApiController {
             "Encontré " + encontradas.size() + " campaña(s) próxima(s)" + detalle + ":",
             encontradas, "CATALOGO", filtros.isEmpty() ? null : filtros
         );
+    }
+
+    private List<String> extraerPalabrasClaveChat(String norm, String distrito) {
+        Set<String> vacias = Set.of(
+            "que", "cual", "cuales", "cuantas", "cuantos", "hay", "tienen", "tiene", "busco", "buscar",
+            "quiero", "quisiera", "ver", "mostrar", "dime", "dame", "campana", "campanas", "voluntariado",
+            "voluntariados", "actividad", "actividades", "proxima", "proximas", "disponible", "disponibles",
+            "actuales", "ambiental", "ambientales", "social", "sociales", "lima", "peru", "voluntia",
+            "donde", "cuando", "como", "puedo", "ayudar", "participar", "unirme", "cupo", "cupos",
+            "fecha", "fechas", "hoy", "esta", "semana", "mes", "de", "del", "la", "las", "el", "los",
+            "un", "una", "unos", "unas", "en", "para", "por", "con", "sobre", "sin", "al", "y", "o", "me", "se"
+        );
+        Set<String> palabrasDistrito = distrito == null ? Set.of()
+                : Set.of(normalizarChat(distrito).split("\\s+"));
+
+        return java.util.Arrays.stream(norm.replaceAll("[^a-z0-9\\s]", " ").split("\\s+"))
+                .filter(p -> p.length() >= 3)
+                .filter(p -> !vacias.contains(p))
+                .filter(p -> !palabrasDistrito.contains(p))
+                .toList();
     }
 
     private Map<String, Object> respuestaChat(String texto, List<CampaniaVista> lista, String destino, Map<String, String> filtros) {
