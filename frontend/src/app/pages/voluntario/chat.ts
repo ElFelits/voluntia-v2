@@ -11,7 +11,7 @@ import { mensajeError, SesionService, VoluntiaService } from '../../services/vol
 type Mensaje = { pregunta: string } | { respuesta: RespuestaChat };
 
 @Component({
-  imports: [DatePipe, MatButtonModule, ReactiveFormsModule, RouterLink],
+  imports: [DatePipe, FormsModule, MatButtonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './chat.html',
   styleUrl: './chat.css',
 })
