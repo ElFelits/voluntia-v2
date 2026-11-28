@@ -363,7 +363,8 @@ public class ApiController {
             "voluntariados", "actividad", "actividades", "proxima", "proximas", "disponible", "disponibles",
             "actuales", "ambiental", "ambientales", "social", "sociales", "lima", "peru", "voluntia",
             "donde", "cuando", "como", "puedo", "ayudar", "participar", "unirme", "cupo", "cupos",
-            "fecha", "fechas", "hoy", "esta", "semana", "mes", "de", "del", "la", "las", "el", "los",
+            "fecha", "fechas", "hoy", "esta", "semana", "mes", "todo", "toda", "todos", "todas",
+            "algun", "alguna", "algunos", "algunas", "de", "del", "la", "las", "el", "los",
             "un", "una", "unos", "unas", "en", "para", "por", "con", "sobre", "sin", "al", "y", "o", "me", "se"
         );
         Set<String> palabrasDistrito = distrito == null ? Set.of()
