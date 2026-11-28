@@ -32,28 +32,66 @@ public class ApiController {
         this.sesion = sesion;
         this.acceso = acceso;
     }
-    @GetMapping("/voluntarios") public List<CuentaDTO> voluntarios() {
-        return cuentas.listarVoluntarios().stream().map(v->cuentas.buscar(v.getId(),false)).toList();
+
+    @GetMapping("/voluntarios")
+    public List<CuentaDTO> voluntarios() {
+        return cuentas.listarVoluntarios().stream().map(v -> cuentas.buscar(v.getId(), false)).toList();
     }
-    @GetMapping("/organizaciones") public List<CuentaDTO> organizaciones() {
-        return cuentas.listarOrganizaciones().stream().map(o->cuentas.buscar(o.getId(),true)).toList();
+
+    @GetMapping("/organizaciones")
+    public List<CuentaDTO> organizaciones() {
+        return cuentas.listarOrganizaciones().stream().map(o -> cuentas.buscar(o.getId(), true)).toList();
     }
-    @GetMapping("/voluntarios/{id}") public CuentaDTO voluntario(@PathVariable Integer id) {return cuentas.buscar(id,false);}
-    @GetMapping("/organizaciones/{id}") public OrganizacionPublica organizacion(@PathVariable Integer id) {return angular.ficha(id);}
-    @PostMapping("/voluntarios") @ResponseStatus(HttpStatus.CREATED)
-    public CuentaDTO crearVoluntario(@Valid @RequestBody CuentaDTO dto) {dto.setId(null);return cuentas.buscar(cuentas.guardar(dto,false),false);}
-    @PostMapping("/organizaciones") @ResponseStatus(HttpStatus.CREATED)
-    public CuentaDTO crearOrganizacion(@Valid @RequestBody CuentaDTO dto) {dto.setId(null);return cuentas.buscar(cuentas.guardar(dto,true),true);}
-    @PutMapping("/voluntarios/{id}") public CuentaDTO actualizarVoluntario(@PathVariable Integer id,@Valid @RequestBody CuentaDTO dto) {
-        dto.setId(id);cuentas.guardar(dto,false);return cuentas.buscar(id,false);
+
+    @GetMapping("/voluntarios/{id}")
+    public CuentaDTO voluntario(@PathVariable Integer id) {
+        return cuentas.buscar(id, false);
     }
-    @PutMapping("/organizaciones/{id}") public CuentaDTO actualizarOrganizacion(@PathVariable Integer id,@Valid @RequestBody CuentaDTO dto) {
-        dto.setId(id);cuentas.guardar(dto,true);return cuentas.buscar(id,true);
+
+    @GetMapping("/organizaciones/{id}")
+    public OrganizacionPublica organizacion(@PathVariable Integer id) {
+        return angular.ficha(id);
     }
-    @DeleteMapping("/voluntarios/{id}") @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void eliminarVoluntario(@PathVariable Integer id) {cuentas.eliminar(id,false);}
-    @DeleteMapping("/organizaciones/{id}") @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void eliminarOrganizacion(@PathVariable Integer id) {cuentas.eliminar(id,true);}
+
+    @PostMapping("/voluntarios")
+    @ResponseStatus(HttpStatus.CREATED)
+    public CuentaDTO crearVoluntario(@Valid @RequestBody CuentaDTO dto) {
+        dto.setId(null);
+        return cuentas.buscar(cuentas.guardar(dto, false), false);
+    }
+
+    @PostMapping("/organizaciones")
+    @ResponseStatus(HttpStatus.CREATED)
+    public CuentaDTO crearOrganizacion(@Valid @RequestBody CuentaDTO dto) {
+        dto.setId(null);
+        return cuentas.buscar(cuentas.guardar(dto, true), true);
+    }
+
+    @PutMapping("/voluntarios/{id}")
+    public CuentaDTO actualizarVoluntario(@PathVariable Integer id, @Valid @RequestBody CuentaDTO dto) {
+        dto.setId(id);
+        cuentas.guardar(dto, false);
+        return cuentas.buscar(id, false);
+    }
+
+    @PutMapping("/organizaciones/{id}")
+    public CuentaDTO actualizarOrganizacion(@PathVariable Integer id, @Valid @RequestBody CuentaDTO dto) {
+        dto.setId(id);
+        cuentas.guardar(dto, true);
+        return cuentas.buscar(id, true);
+    }
+
+    @DeleteMapping("/voluntarios/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void eliminarVoluntario(@PathVariable Integer id) {
+        cuentas.eliminar(id, false);
+    }
+
+    @DeleteMapping("/organizaciones/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void eliminarOrganizacion(@PathVariable Integer id) {
+        cuentas.eliminar(id, true);
+    }
 
     @GetMapping("/auth/sesion")
     public Object sesion(HttpServletResponse response) {
@@ -67,7 +105,8 @@ public class ApiController {
         return sesion.ingresar(dto.email(), dto.contrasena(), request, response);
     }
 
-    @PostMapping("/auth/registro") @ResponseStatus(HttpStatus.CREATED)
+    @PostMapping("/auth/registro")
+    @ResponseStatus(HttpStatus.CREATED)
     public CuentaDTO registrar(@Valid @RequestBody Registro dto, HttpServletRequest request,
                                HttpServletResponse response) {
         if (!Set.of("VOLUNTARIO", "ORGANIZACION").contains(dto.rol()))
@@ -76,7 +115,8 @@ public class ApiController {
         return sesion.ingresar(dto.email(), dto.contrasena(), request, response);
     }
 
-    @PostMapping("/auth/salir") @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PostMapping("/auth/salir")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void salir(HttpServletRequest request, HttpServletResponse response) {
         sesion.salir(request, response);
     }
@@ -88,12 +128,12 @@ public class ApiController {
         return cuentas.miCuenta();
     }
 
-@GetMapping("/campanias")
-    public List<CampaniaVista> listarCampanias(@RequestParam(required=false) String q,
-            @RequestParam(required=false) String ubicacion,
-            @RequestParam(required=false) String distrito,
-            @RequestParam(required=false) String categoria,
-            @RequestParam(defaultValue="false") boolean gestion, Authentication actor) {
+    @GetMapping("/campanias")
+    public List<CampaniaVista> listarCampanias(@RequestParam(required = false) String q,
+            @RequestParam(required = false) String ubicacion,
+            @RequestParam(required = false) String distrito,
+            @RequestParam(required = false) String categoria,
+            @RequestParam(defaultValue = "false") boolean gestion, Authentication actor) {
         if (gestion && (actor == null || actor instanceof AnonymousAuthenticationToken))
             throw new AuthenticationCredentialsNotFoundException("Inicia sesión para continuar");
         String filtroUbicacion = (distrito != null && !distrito.isBlank()) ? distrito : ubicacion;
@@ -101,9 +141,12 @@ public class ApiController {
     }
 
     @GetMapping("/campanias/{id}")
-    public CampaniaVista campania(@PathVariable Integer id) { return angular.campania(id); }
+    public CampaniaVista campania(@PathVariable Integer id) {
+        return angular.campania(id);
+    }
 
-    @PostMapping("/campanias") @ResponseStatus(HttpStatus.CREATED)
+    @PostMapping("/campanias")
+    @ResponseStatus(HttpStatus.CREATED)
     public CampaniaVista crearCampania(@Valid @RequestBody CampaniaDTO dto) {
         dto.setId(null);
         dto.setOrganizacionId(null);
@@ -117,8 +160,11 @@ public class ApiController {
         return angular.campania(campanias.guardar(dto));
     }
 
-    @DeleteMapping("/campanias/{id}") @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void cancelarCampania(@PathVariable Integer id) { campanias.cancelar(id); }
+    @DeleteMapping("/campanias/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void cancelarCampania(@PathVariable Integer id) {
+        campanias.cancelar(id);
+    }
 
     @GetMapping("/organizaciones/{id}/campanias")
     public List<CampaniaVista> campaniasOrganizacion(@PathVariable Integer id) {
@@ -147,10 +193,12 @@ public class ApiController {
     }
 
     @GetMapping("/mis-participaciones")
-    public List<Participacion> misParticipaciones() { return angular.historial(acceso.voluntarioId()); }
+    public List<Participacion> misParticipaciones() {
+        return angular.historial(acceso.voluntarioId());
+    }
 
     @GetMapping("/csrf")
-    public Map<String,String> csrf(org.springframework.security.web.csrf.CsrfToken token) {
+    public Map<String, String> csrf(org.springframework.security.web.csrf.CsrfToken token) {
         return Map.of("headerName", token.getHeaderName(), "token", token.getToken());
     }
 
@@ -160,11 +208,17 @@ public class ApiController {
         return valorJSON(inscripciones.miInscripcion(id).map(angular::vista).orElse(null));
     }
 
-    @PostMapping("/campanias/{id}/mi-inscripcion") @ResponseStatus(HttpStatus.CREATED)
-    public InscripcionVista unirme(@PathVariable Integer id) { return angular.vista(inscripciones.unirme(id)); }
+    @PostMapping("/campanias/{id}/mi-inscripcion")
+    @ResponseStatus(HttpStatus.CREATED)
+    public InscripcionVista unirme(@PathVariable Integer id) {
+        return angular.vista(inscripciones.unirme(id));
+    }
 
-    @DeleteMapping("/campanias/{id}/mi-inscripcion") @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void salir(@PathVariable Integer id) { inscripciones.salir(id); }
+    @DeleteMapping("/campanias/{id}/mi-inscripcion")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void salir(@PathVariable Integer id) {
+        inscripciones.salir(id);
+    }
 
     @GetMapping("/campanias/{id}/participantes")
     public List<InscripcionVista> participantes(@PathVariable Integer id) {
@@ -176,22 +230,27 @@ public class ApiController {
         return angular.vista(inscripciones.actualizarParticipante(id, inscripcionId, true));
     }
 
-    @DeleteMapping("/campanias/{id}/participantes/{inscripcionId}") @ResponseStatus(HttpStatus.NO_CONTENT)
+    @DeleteMapping("/campanias/{id}/participantes/{inscripcionId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void retirar(@PathVariable Integer id, @PathVariable Integer inscripcionId) {
         inscripciones.actualizarParticipante(id, inscripcionId, false);
     }
 
     @GetMapping("/impacto")
-    public List<Impacto> impacto() { return angular.impacto(); }
+    public List<Impacto> impacto() {
+        return angular.impacto();
+    }
 
     @GetMapping("/campanias/{id}/impacto")
-    public Resultado resultado(@PathVariable Integer id) { return angular.resultado(id); }
+    public Resultado resultado(@PathVariable Integer id) {
+        return angular.resultado(id);
+    }
 
     @PutMapping("/campanias/{id}/impacto")
     public Resultado guardarResultado(@PathVariable Integer id, @Valid @RequestBody Resultado resultado) {
         return angular.registrarResultado(id, resultado);
     }
-    
+
     private record ReglaChat(List<String> claves, String respuesta, String destino) {}
 
     private static final List<ReglaChat> REGLAS_CHAT = List.of(
@@ -245,6 +304,21 @@ public class ApiController {
             "¡Con gusto! Si necesitas buscar otra campaña o revisar tus inscripciones, aquí estoy.",
             null
         )
+    );
+
+    private static final Map<String, String> ALIAS_DISTRITOS = Map.ofEntries(
+        Map.entry("sjl", "San Juan de Lurigancho"),
+        Map.entry("sjm", "San Juan de Miraflores"),
+        Map.entry("smp", "San Martín de Porres"),
+        Map.entry("vmt", "Villa María del Triunfo"),
+        Map.entry("ves", "Villa El Salvador"),
+        Map.entry("surco", "Santiago de Surco"),
+        Map.entry("magdalena", "Magdalena del Mar"),
+        Map.entry("chosica", "Lurigancho"),
+        Map.entry("lurigancho chosica", "Lurigancho"),
+        Map.entry("cercado de lima", "Lima"),
+        Map.entry("lima cercado", "Lima"),
+        Map.entry("centro de lima", "Lima")
     );
 
     @PostMapping("/chat")
@@ -312,10 +386,19 @@ public class ApiController {
             }
             distrito = miUbicacion;
         } else {
-            for (String d : distritos()) {
-                if (norm.contains(normalizarChat(d))) {
-                    distrito = d;
+            String padded = " " + norm + " ";
+            for (var entry : ALIAS_DISTRITOS.entrySet()) {
+                if (padded.contains(" " + entry.getKey() + " ")) {
+                    distrito = entry.getValue();
                     break;
+                }
+            }
+            if (distrito == null) {
+                for (String d : distritos()) {
+                    if (!"Lima".equals(d) && padded.contains(" " + normalizarChat(d) + " ")) {
+                        distrito = d;
+                        break;
+                    }
                 }
             }
         }
@@ -370,10 +453,11 @@ public class ApiController {
         Set<String> palabrasDistrito = distrito == null ? Set.of()
                 : Set.of(normalizarChat(distrito).split("\\s+"));
 
-        return java.util.Arrays.stream(norm.replaceAll("[^a-z0-9\\s]", " ").split("\\s+"))
+        return java.util.Arrays.stream(norm.split("\\s+"))
                 .filter(p -> p.length() >= 3)
                 .filter(p -> !vacias.contains(p))
                 .filter(p -> !palabrasDistrito.contains(p))
+                .filter(p -> !ALIAS_DISTRITOS.containsKey(p))
                 .toList();
     }
 
@@ -389,7 +473,10 @@ public class ApiController {
     private static String normalizarChat(String s) {
         if (s == null) return "";
         return java.text.Normalizer.normalize(s.trim().toLowerCase(Locale.ROOT), java.text.Normalizer.Form.NFD)
-                .replaceAll("\\p{M}+", "");
+                .replaceAll("\\p{M}+", "")
+                .replaceAll("[^a-z0-9\\s]", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
     }
 
     private Object valorJSON(Object valor) {
