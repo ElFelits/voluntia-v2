@@ -81,8 +81,9 @@ public class SecurityConfig {
                         org.springframework.security.web.csrf.CsrfFilter.class)
                 .authorizeHttpRequests(a -> a
                     .requestMatchers("/error").permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/csrf", "/api/auth/sesion", "/api/campanias",
-                            "/api/campanias/{id}", "/api/organizaciones/{id}", "/api/organizaciones/{id}/campanias").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/csrf", "/api/auth/sesion", "/api/distritos", "/api/campanias",
+                            "/api/campanias/{id}", "/api/campanias/{id}/portada/{portadaId}",
+                            "/api/organizaciones/{id}", "/api/organizaciones/{id}/campanias").permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/auth/ingresar", "/api/auth/registro", "/api/auth/salir").permitAll()
                     .requestMatchers("/api/voluntarios/**", "/api/organizaciones/**").hasRole("ADMIN")
                     .requestMatchers("/api/mi-cuenta").hasAnyRole("VOLUNTARIO", "ORGANIZACION")
