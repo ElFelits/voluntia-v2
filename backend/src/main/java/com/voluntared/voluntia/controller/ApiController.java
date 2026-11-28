@@ -88,13 +88,16 @@ public class ApiController {
         return cuentas.miCuenta();
     }
 
-    @GetMapping("/campanias")
+@GetMapping("/campanias")
     public List<CampaniaVista> listarCampanias(@RequestParam(required=false) String q,
-            @RequestParam(required=false) String ubicacion, @RequestParam(required=false) String categoria,
+            @RequestParam(required=false) String ubicacion,
+            @RequestParam(required=false) String distrito,
+            @RequestParam(required=false) String categoria,
             @RequestParam(defaultValue="false") boolean gestion, Authentication actor) {
         if (gestion && (actor == null || actor instanceof AnonymousAuthenticationToken))
             throw new AuthenticationCredentialsNotFoundException("Inicia sesión para continuar");
-        return angular.listar(q, ubicacion, categoria, gestion);
+        String filtroUbicacion = (distrito != null && !distrito.isBlank()) ? distrito : ubicacion;
+        return angular.listar(q, filtroUbicacion, categoria, gestion);
     }
 
     @GetMapping("/campanias/{id}")
