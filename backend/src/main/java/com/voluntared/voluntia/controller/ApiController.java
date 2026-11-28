@@ -191,6 +191,125 @@ public class ApiController {
     public Resultado guardarResultado(@PathVariable Integer id, @Valid @RequestBody Resultado resultado) {
         return angular.registrarResultado(id, resultado);
     }
+    
+    @PostMapping("/chat")
+    public Map<String, Object> chat(@RequestBody Map<String, Object> body, Authentication actor) {
+        String mensaje = body.get("mensaje") == null ? "" : body.get("mensaje").toString().trim();
+        String norm = normalizarChat(mensaje);
+        Map<?, ?> anterior = body.get("anterior") instanceof Map<?, ?> m ? m : Map.of();
+        boolean autenticado = actor != null && !(actor instanceof AnonymousAuthenticationToken);
+
+        if (norm.contains("como me inscribo") || norm.contains("como participar") || norm.contains("inscribirme") || norm.equals("hola")) {
+            return respuestaChat(
+                "Para inscribirte: 1) Inicia sesión con tu cuenta de voluntario. 2) Entra a Explorar campañas y abre la actividad que te interese. 3) Pulsa el botón Inscribirme si aún hay cupos disponibles.",
+                List.of(), "CATALOGO", null
+            );
+        }
+
+        if (norm.contains("inscripcion") || norm.contains("participacion") || norm.contains("inscrito")) {
+            if (!autenticado) {
+                return respuestaChat(
+                    "Inicia sesión con tu cuenta de voluntario para revisar tus inscripciones activas y tu historial.",
+                    List.of(), null, null
+                );
+            }
+            if (!acceso.rol("VOLUNTARIO")) {
+                return respuestaChat(
+                    "Tu cuenta tiene perfil de organización o administrador. Puedes revisar los participantes desde la gestión de cada campaña.",
+                    List.of(), "CATALOGO", null
+                );
+            }
+            var lista = angular.historial(acceso.voluntarioId());
+            if (lista.isEmpty()) {
+                return respuestaChat(
+                    "Aún no tienes inscripciones registradas. Explora las campañas próximas para unirte a una.",
+                    List.of(), "CATALOGO", null
+                );
+            }
+            String resumen = lista.stream()
+                .map(p -> "• " + p.campania().titulo() + " (" + p.estado() + ")")
+                .collect(java.util.stream.Collectors.joining("\n"));
+            return respuestaChat(
+                "Tienes " + lista.size() + " participación(es) registrada(s):\n" + resumen,
+                List.of(), "PARTICIPACIONES", null
+            );
+        }
+
+        String categoria = norm.contains("ambiental") ? "Ambiental"
+                : (norm.contains("social") ? "Social" : null);
+
+        String distrito = null;
+        if (norm.contains("cerca de mi") || norm.contains("mi distrito") || norm.contains("mi zona")) {
+            if (!autenticado) {
+                return respuestaChat(
+                    "Inicia sesión y guarda tu distrito en Mi cuenta para mostrarte las campañas cerca de ti.",
+                    List.of(), "PERFIL", null
+                );
+            }
+            String miUbicacion = cuentas.miCuenta().getUbicacion();
+            if (miUbicacion == null || miUbicacion.isBlank()) {
+                return respuestaChat(
+                    "Aún no tienes un distrito configurado en tu perfil. Actualízalo en Mi cuenta para buscar cerca de ti.",
+                    List.of(), "PERFIL", null
+                );
+            }
+            distrito = miUbicacion;
+        } else {
+            for (String d : distritos()) {
+                if (norm.contains(normalizarChat(d))) {
+                    distrito = d;
+                    break;
+                }
+            }
+        }
+
+        if (categoria == null && distrito != null && anterior.get("categoria") instanceof String catAnt && !catAnt.isBlank()) {
+            categoria = catAnt;
+        }
+        if (distrito == null && categoria != null && anterior.get("distrito") instanceof String distAnt && !distAnt.isBlank()) {
+            distrito = distAnt;
+        }
+
+        boolean pideCampanias = categoria != null || distrito != null
+                || norm.contains("campana") || norm.contains("proxima") || norm.contains("disponible");
+
+        String q = pideCampanias ? null : mensaje;
+        List<CampaniaVista> encontradas = angular.listar(q, distrito, categoria, false).stream().limit(5).toList();
+
+        Map<String, String> filtros = new LinkedHashMap<>();
+        if (categoria != null) filtros.put("categoria", categoria);
+        if (distrito != null) filtros.put("distrito", distrito);
+        if (q != null && !q.isBlank()) filtros.put("q", q);
+
+        if (encontradas.isEmpty()) {
+            return respuestaChat(
+                "No encontré campañas próximas con ese criterio. Puedes probar con otra categoría (Ambiental o Social) o revisar todo el catálogo.",
+                List.of(), "CATALOGO", filtros.isEmpty() ? null : filtros
+            );
+        }
+
+        String detalle = (categoria != null ? " de categoría " + categoria : "")
+                + (distrito != null ? " en " + distrito : "");
+        return respuestaChat(
+            "Encontré " + encontradas.size() + " campaña(s) próxima(s)" + detalle + ":",
+            encontradas, "CATALOGO", filtros.isEmpty() ? null : filtros
+        );
+    }
+
+    private Map<String, Object> respuestaChat(String texto, List<CampaniaVista> lista, String destino, Map<String, String> filtros) {
+        Map<String, Object> res = new LinkedHashMap<>();
+        res.put("texto", texto);
+        res.put("campanias", lista == null ? List.of() : lista);
+        res.put("destino", destino);
+        res.put("filtros", filtros);
+        return res;
+    }
+
+    private static String normalizarChat(String s) {
+        if (s == null) return "";
+        return java.text.Normalizer.normalize(s.trim().toLowerCase(Locale.ROOT), java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}+", "");
+    }
 
     private Object valorJSON(Object valor) {
         return valor == null ? tools.jackson.databind.node.NullNode.getInstance() : valor;
